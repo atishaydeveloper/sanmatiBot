@@ -25,6 +25,7 @@ authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+gunicorn = "^21.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0"
