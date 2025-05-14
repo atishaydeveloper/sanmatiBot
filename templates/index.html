@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanmati School Chatbot Admin</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-robot me-2"></i>
+                Sanmati School Chatbot Admin
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">Chatbot Dashboard</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            This chatbot is configured for Twilio SMS. Incoming messages to your Twilio number will be
+                            processed using the <code>/sms</code> endpoint.
+                        </div>
+
+                        <h5 class="mt-4">Test the Chatbot</h5>
+                        <div class="chat-container mb-4" id="chatContainer">
+                            <div class="text-center text-muted p-3">
+                                <i class="bi bi-chat-dots"></i>
+                                Send a message to test the chatbot
+                            </div>
+                        </div>
+
+                        <div class="input-group mb-4">
+                            <input type="text" class="form-control" id="messageInput" placeholder="Type a message...">
+                            <button class="btn btn-primary" id="sendButton">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </div>
+
+                        <h5 class="mt-4">Maintenance</h5>
+                        <div class="d-grid">
+                            <button class="btn btn-warning" id="resetButton">
+                                <i class="bi bi-arrow-repeat me-2"></i>
+                                Reset Vector Store
+                            </button>
+                        </div>
+
+                        <div class="mt-4">
+                            <h5>Setup Instructions</h5>
+                            <p>Configure your Twilio webhook to point to:</p>
+                            <code class="d-block p-2 bg-dark text-light mb-3">
+                                https://{your-domain}/sms
+                            </code>
+
+                            <h6>Required Environment Variables:</h6>
+                            <ul class="list-group mb-3">
+                                <li class="list-group-item">GOOGLE_API_KEY - Your Google Gemini API key</li>
+                                <li class="list-group-item">SESSION_SECRET - Secret key for Flask sessions</li>
+                                <li class="list-group-item">SCHOOL_DATA_PATH - Path to school data markdown file (default: attached_assets/main2.md)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const resetButton = document.getElementById('resetButton');
+
+            // Add a message to the chat
+            function addMessage(text, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${isUser ? 'user-message' : 'bot-message'}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.innerHTML = isUser ? '<i class="bi bi-person-circle"></i>' : '<i class="bi bi-robot"></i>';
+                
+                const content = document.createElement('div');
+                content.className = 'content';
+                content.textContent = text;
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(content);
+                chatContainer.appendChild(messageDiv);
+                
+                // Auto scroll to bottom
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // Clear placeholder if this is the first message
+                if (chatContainer.querySelector('.text-center')) {
+                    chatContainer.querySelector('.text-center').remove();
+                }
+            }
+
+            // Send message to backend
+            async function sendMessage() {
+                const message = messageInput.value.trim();
+                if (!message) return;
+                
+                // Add user message to chat
+                addMessage(message, true);
+                messageInput.value = '';
+                
+                try {
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        addMessage(data.reply);
+                    } else {
+                        addMessage(`Error: ${data.error || 'Something went wrong'}`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    addMessage('Sorry, there was an error processing your request.');
+                }
+            }
+
+            // Reset vector store
+            async function resetVectorStore() {
+                resetButton.disabled = true;
+                resetButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Resetting...';
+                
+                try {
+                    const response = await fetch('/reset', {
+                        method: 'POST'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        alert(data.message);
+                    } else {
+                        alert(`Error: ${data.error || 'Something went wrong'}`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Sorry, there was an error resetting the vector store.');
+                } finally {
+                    resetButton.disabled = false;
+                    resetButton.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i> Reset Vector Store';
+                }
+            }
+
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            resetButton.addEventListener('click', resetVectorStore);
+        });
+    </script>
+</body>
+</html>
