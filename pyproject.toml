@@ -17,6 +17,19 @@ dependencies = [
     "faiss-cpu>=1.11.0",
 ]
 
+[tool.poetry]
+name = "your-project-name"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
+
+
 [[tool.uv.index]]
 explicit = true
 name = "pytorch-cpu"
